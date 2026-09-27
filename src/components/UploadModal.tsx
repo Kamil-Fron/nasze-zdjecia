@@ -13,6 +13,7 @@ import {
 import confetti from 'canvas-confetti';
 import { GuestProfile, WeddingSettings } from '../types/wedding';
 import { compressImage } from '../utils/imageCompressor';
+import { addPhotoToFirestore } from '../services/weddingFirestore';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -94,6 +95,12 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'Nie udało się przesłać zdjęcia.');
+      }
+
+      const uploadResult = await response.json();
+      if (uploadResult.photo) {
+        // Also replicate to Firestore cloud for multi-device real-time sync
+        addPhotoToFirestore(uploadResult.photo).catch(e => console.warn('Firestore sync background notice:', e));
       }
 
       // Fire celebratory confetti!

@@ -15,6 +15,11 @@ import { LiveSlideshowModal } from './components/LiveSlideshowModal';
 import { GuestWelcomeModal } from './components/GuestWelcomeModal';
 import { WeddingSettings, PhotoItem, WeddingStats, GuestProfile } from './types/wedding';
 import { getGuestProfile, saveGuestProfile } from './utils/deviceStorage';
+import { 
+  subscribePhotos, 
+  reactToPhotoInFirestore, 
+  deletePhotoFromFirestore 
+} from './services/weddingFirestore';
 
 export default function App() {
   const [settings, setSettings] = useState<WeddingSettings | null>(null);
@@ -75,7 +80,26 @@ export default function App() {
     }
   }, [fetchWeddingData, fetchPhotos]);
 
-  // Periodic polling for live updates during the wedding reception (every 10s)
+  // Real-time Firestore sync listener for instant photo updates across all devices
+  useEffect(() => {
+    const unsubscribe = subscribePhotos((firestorePhotos, firestoreStats) => {
+      if (firestorePhotos && firestorePhotos.length > 0) {
+        setPhotos(firestorePhotos);
+        setStats(prev => ({
+          ...prev,
+          totalPhotos: firestoreStats.totalPhotos,
+          uniqueContributors: firestoreStats.uniqueContributors,
+          contributorsList: firestoreStats.contributorsList,
+          syncedToGoogleCount: firestoreStats.syncedToGoogleCount
+        }));
+        setInitialLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Periodic polling fallback for server data (every 10s)
   useEffect(() => {
     const interval = setInterval(() => {
       fetchPhotos();
@@ -86,10 +110,12 @@ export default function App() {
 
   // Reactions handler
   const handleReact = async (photoId: string, reactionType: 'heart' | 'cheers' | 'sparkles' | 'dance') => {
+    const currentPhoto = photos.find(p => p.id === photoId);
+    const isLiked = currentPhoto?.likedByDevices?.includes(guestProfile.deviceId) || false;
+
     // Optimistic UI update
     setPhotos(prev => prev.map(p => {
       if (p.id === photoId) {
-        const isLiked = p.likedByDevices?.includes(guestProfile.deviceId);
         return {
           ...p,
           likes: isLiked && reactionType === 'heart' ? Math.max(0, p.likes - 1) : p.likes + 1,
@@ -104,6 +130,9 @@ export default function App() {
       }
       return p;
     }));
+
+    // Update in Firestore for other devices
+    reactToPhotoInFirestore(photoId, reactionType, guestProfile.deviceId, isLiked);
 
     try {
       const res = await fetch(`/api/photos/${photoId}/react`, {
@@ -138,6 +167,8 @@ export default function App() {
         })
       });
       if (res.ok) {
+        // Remove from Firestore
+        deletePhotoFromFirestore(photoId).catch(e => console.warn(e));
         setPhotos(prev => prev.filter(p => p.id !== photoId));
         fetchWeddingData();
         if (selectedPhoto && selectedPhoto.id === photoId) {

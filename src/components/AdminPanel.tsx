@@ -439,7 +439,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </h3>
             </div>
             <p className="text-xs text-stone-500 mt-1">
-              Goście przeglądają wszystkie zdjęcia bezpośrednio w aplikacji, a kopia każdego zdjęcia automatycznie zapisuje się w Twoim albumie na koncie Google.
+              Wszystkie zdjęcia są natychmiast zapisywane w chmurze weselnej (Firebase) i w galerii. Aby pobrać komplet zdjęć do wgrania do Google Zdjęcia, skorzystaj z przycisku „Pobierz Wszystkie Zdjęcia (ZIP)” u góry panelu.
             </p>
           </div>
 

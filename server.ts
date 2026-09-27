@@ -533,20 +533,22 @@ app.get('/api/export-zip', async (req, res) => {
 
 async function startServer() {
   const isDev = process.env.NODE_ENV !== 'production';
+  const distPath = path.resolve(__dirname, 'dist');
+  const hasDist = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
 
-  if (isDev) {
+  if (!isDev && hasDist) {
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  } else {
+    // Development or when dist is not prebuilt yet
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
     });
     app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(__dirname, 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
   }
 
   app.listen(PORT, '0.0.0.0', () => {

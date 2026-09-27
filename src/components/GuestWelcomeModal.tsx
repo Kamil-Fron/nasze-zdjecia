@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Sparkles, Heart, Check, User } from 'lucide-react';
 import { GuestProfile } from '../types/wedding';
 import { saveGuestProfile } from '../utils/deviceStorage';
+import { isGuestNameTakenInFirestore, registerGuestInFirestore } from '../services/weddingFirestore';
 
 interface GuestWelcomeModalProps {
   isOpen: boolean;
@@ -36,6 +37,15 @@ export const GuestWelcomeModal: React.FC<GuestWelcomeModalProps> = ({
       setIsSubmitting(true);
       setError('');
 
+      // 1. Check in Firestore cloud
+      const isTakenInFirestore = await isGuestNameTakenInFirestore(cleanName, currentProfile.deviceId);
+      if (isTakenInFirestore) {
+        setError(`Imię "${cleanName}" zostało już zarejestrowane przez innego gościa weselnego. Dodaj np. pierwszą literę nazwiska lub dopisek.`);
+        setIsSubmitting(false);
+        return;
+      }
+
+      // 2. Also register in local server
       const res = await fetch('/api/guests/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -52,12 +62,16 @@ export const GuestWelcomeModal: React.FC<GuestWelcomeModalProps> = ({
         return;
       }
 
+      // 3. Save to Firestore
+      await registerGuestInFirestore(currentProfile.deviceId, cleanName);
+
       const updated = saveGuestProfile(cleanName);
       onSaveProfile(updated);
       setIsSubmitting(false);
       onClose();
     } catch {
-      // In case of offline/network issue, still allow local save
+      // In case of network issue, still allow local save
+      await registerGuestInFirestore(currentProfile.deviceId, cleanName);
       const updated = saveGuestProfile(cleanName);
       onSaveProfile(updated);
       setIsSubmitting(false);

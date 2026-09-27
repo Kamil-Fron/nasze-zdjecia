@@ -1,0 +1,54 @@
+{
+  "entities": {
+    "photos": {
+      "title": "Photo",
+      "description": "Zdjęcie weselne dodane przez gości",
+      "type": "object",
+      "properties": {
+        "url": { "type": "string", "description": "URL zdjęcia lub base64 data" },
+        "authorName": { "type": "string", "description": "Imię lub pseudonim gościa" },
+        "deviceId": { "type": "string", "description": "Identyfikator urządzenia" },
+        "caption": { "type": "string", "description": "Podpis lub życzenia" },
+        "createdAt": { "type": "string", "description": "Data i czas dodania" },
+        "likes": { "type": "number", "description": "Liczba polubień" },
+        "reactions": {
+          "type": "object",
+          "properties": {
+            "heart": { "type": "number" },
+            "cheers": { "type": "number" },
+            "sparkles": { "type": "number" },
+            "dance": { "type": "number" }
+          }
+        },
+        "likedByDevices": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "googleSynced": { "type": "boolean" }
+      },
+      "required": ["url", "authorName", "createdAt"]
+    },
+    "guests": {
+      "title": "Guest",
+      "description": "Zarejestrowane imiona gości weselnych",
+      "type": "object",
+      "properties": {
+        "deviceId": { "type": "string" },
+        "name": { "type": "string" },
+        "registeredAt": { "type": "string" }
+      },
+      "required": ["deviceId", "name"]
+    },
+    "settings": {
+      "title": "WeddingSettings",
+      "description": "Ustawienia wesela i pary młodej",
+      "type": "object",
+      "properties": {
+        "coupleNames": { "type": "string" },
+        "weddingDate": { "type": "string" },
+        "weddingLocation": { "type": "string" },
+        "adminPin": { "type": "string" }
+      }
+    }
+  }
+}
