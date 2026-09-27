@@ -187,3 +187,64 @@ export async function deletePhotoFromFirestore(photoId: string) {
     console.warn('Failed to delete photo from Firestore:', err);
   }
 }
+
+/**
+ * Real-time listener for registered guests
+ */
+export function subscribeGuests(callback: (guests: { id: string; name: string; deviceId: string; registeredAt?: string }[]) => void) {
+  return onSnapshot(
+    collection(db, GUESTS_COLLECTION),
+    (snapshot) => {
+      const list: { id: string; name: string; deviceId: string; registeredAt?: string }[] = [];
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data() as { name: string; deviceId: string; registeredAt?: string };
+        list.push({
+          id: docSnap.id,
+          name: data.name || '',
+          deviceId: data.deviceId || docSnap.id,
+          registeredAt: data.registeredAt
+        });
+      });
+      callback(list);
+    },
+    (err) => console.warn('Guest subscription notice:', err)
+  );
+}
+
+/**
+ * Admin: Delete guest by docId / deviceId from Firestore
+ */
+export async function deleteGuestFromFirestore(guestId: string) {
+  try {
+    await deleteDoc(doc(db, GUESTS_COLLECTION, guestId));
+  } catch (err) {
+    console.warn('Failed to delete guest from Firestore:', err);
+  }
+}
+
+/**
+ * Save / Update admin PIN and global settings in Firestore so it's remembered across all devices
+ */
+export async function saveGlobalSettingsToFirestore(newSettings: Partial<WeddingSettings>) {
+  try {
+    const settingsRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
+    await setDoc(settingsRef, newSettings, { merge: true });
+  } catch (err) {
+    console.warn('Failed to save settings to Firestore:', err);
+  }
+}
+
+/**
+ * Listen to global settings in Firestore
+ */
+export function subscribeSettings(callback: (settings: Partial<WeddingSettings>) => void) {
+  return onSnapshot(
+    doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID),
+    (docSnap) => {
+      if (docSnap.exists()) {
+        callback(docSnap.data() as Partial<WeddingSettings>);
+      }
+    },
+    (err) => console.warn('Settings subscription notice:', err)
+  );
+}

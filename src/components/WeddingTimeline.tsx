@@ -180,21 +180,11 @@ export const WeddingTimeline: React.FC<WeddingTimelineProps> = ({
         </div>
       )}
 
-      {/* Intro info bar */}
-      <div className="bg-white rounded-2xl p-5 border border-stone-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h3 className="font-serif font-bold text-lg text-stone-900">
-            Harmonogram & Informator Fotograficzny
-          </h3>
-          <p className="text-xs text-stone-600 mt-0.5">
-            Śledź przebieg wesela i miej telefon pod ręką w kluczowych momentach!
-          </p>
-        </div>
-
-        <div className="inline-flex items-center gap-2 text-xs font-semibold text-rose-700 bg-rose-50 px-3 py-2 rounded-xl border border-rose-200 self-start sm:self-auto">
-          <Sparkles className="w-3.5 h-3.5 text-rose-500" />
-          <span>Wszystkie ujęcia trafiają do wspólnej galerii</span>
-        </div>
+      {/* Section title */}
+      <div className="flex items-center justify-between pb-1">
+        <h2 className="font-serif font-bold text-2xl sm:text-3xl text-stone-900 tracking-tight">
+          Harmonogram
+        </h2>
       </div>
 
       {/* Detailed Timeline List */}

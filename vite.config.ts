@@ -4,9 +4,9 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
-  // If building for GitHub Pages or relative hosting, use repo path or relative base
-  const isGitHubPages = process.env.GITHUB_ACTIONS === 'true';
-  const base = isGitHubPages ? '/nasze-zdjecia/' : './';
+  // Use relative base './' so assets load seamlessly on GitHub Pages (/nasze-zdjecia/)
+  // as well as custom domains or preview servers without 404s
+  const base = './';
 
   return {
     base,

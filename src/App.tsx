@@ -18,7 +18,9 @@ import { getGuestProfile, saveGuestProfile } from './utils/deviceStorage';
 import { 
   subscribePhotos, 
   reactToPhotoInFirestore, 
-  deletePhotoFromFirestore 
+  deletePhotoFromFirestore,
+  subscribeSettings,
+  saveGlobalSettingsToFirestore
 } from './services/weddingFirestore';
 
 import { fallbackWeddingSettings } from './utils/defaultSettings';
@@ -208,26 +210,53 @@ export default function App() {
     }
   };
 
-  // Admin settings update
+  // Real-time Firestore sync listener for settings & PIN across all devices
+  useEffect(() => {
+    const unsubSettings = subscribeSettings((remoteSettings) => {
+      if (remoteSettings) {
+        setSettings(prev => ({
+          ...(prev || fallbackWeddingSettings),
+          ...remoteSettings,
+          googleSync: {
+            ...((prev || fallbackWeddingSettings).googleSync),
+            ...(remoteSettings.googleSync || {})
+          }
+        }));
+      }
+    });
+
+    return () => unsubSettings();
+  }, []);
+
+  // Admin settings update (Saves to both Backend and Firebase Firestore for cross-device persistence)
   const handleUpdateSettings = async (pin: string, newSettings: Partial<WeddingSettings>): Promise<boolean> => {
     try {
-      const res = await fetch('/api/wedding/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, settings: newSettings })
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSettings(data.settings);
-        fetchWeddingData();
-        return true;
-      } else {
-        const err = await res.json();
-        alert(err.error || 'Błąd podczas zapisywania ustawień.');
-        return false;
+      // 1. Save to Firestore so EVERY device gets the updated settings and new PIN
+      await saveGlobalSettingsToFirestore(newSettings);
+
+      // 2. Also send to local backend if running fullstack
+      try {
+        const res = await fetch('/api/wedding/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin, settings: newSettings })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setSettings(prev => ({ ...(prev || fallbackWeddingSettings), ...data.settings, adminPin: newSettings.adminPin || prev?.adminPin || '1234' }));
+          fetchWeddingData();
+        }
+      } catch (beErr) {
+        console.warn('Backend update notice (using Firestore):', beErr);
       }
+
+      setSettings(prev => ({
+        ...(prev || fallbackWeddingSettings),
+        ...newSettings
+      }));
+      return true;
     } catch {
-      alert('Błąd połączenia z serwerem.');
+      alert('Błąd podczas zapisywania ustawień.');
       return false;
     }
   };
@@ -352,6 +381,7 @@ export default function App() {
         onClose={() => setIsUploadOpen(false)}
         guestProfile={guestProfile}
         settings={settings}
+        onProfileUpdated={(updated) => setGuestProfile(updated)}
         onPhotoUploaded={() => {
           fetchPhotos();
           fetchWeddingData();

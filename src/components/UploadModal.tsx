@@ -13,7 +13,8 @@ import {
 import confetti from 'canvas-confetti';
 import { GuestProfile, WeddingSettings } from '../types/wedding';
 import { compressImage } from '../utils/imageCompressor';
-import { addPhotoToFirestore } from '../services/weddingFirestore';
+import { addPhotoToFirestore, registerGuestInFirestore } from '../services/weddingFirestore';
+import { saveGuestProfile } from '../utils/deviceStorage';
 
 interface UploadModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface UploadModalProps {
   guestProfile: GuestProfile;
   settings: WeddingSettings;
   onPhotoUploaded: () => void;
+  onProfileUpdated?: (profile: GuestProfile) => void;
 }
 
 export const UploadModal: React.FC<UploadModalProps> = ({
@@ -28,7 +30,8 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   onClose,
   guestProfile,
   settings,
-  onPhotoUploaded
+  onPhotoUploaded,
+  onProfileUpdated
 }) => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -122,6 +125,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       // Ensure Firestore has the record for all devices
       await addPhotoToFirestore(photoCreated);
+
+      // AUTOMATICALLY ASSIGN AND REMEMBER THIS NAME ON THIS DEVICE!
+      if (!guestProfile.isRegistered || guestProfile.name !== finalAuthorName) {
+        const updated = saveGuestProfile(finalAuthorName);
+        registerGuestInFirestore(guestProfile.deviceId, finalAuthorName).catch(e => console.warn(e));
+        if (onProfileUpdated) {
+          onProfileUpdated(updated);
+        }
+      }
 
       // Fire celebratory confetti!
       confetti({

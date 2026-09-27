@@ -28,8 +28,10 @@ export const TableQrGenerator: React.FC<TableQrGeneratorProps> = ({ settings }) 
   const [isMultiPrint, setIsMultiPrint] = useState(false);
   const [customUrl, setCustomUrl] = useState('');
 
-  // Default app URL or custom domain if entered
-  const appBaseUrl = typeof window !== 'undefined' ? window.location.origin : '';
+  // Default app URL (including full path /nasze-zdjecia/ on GitHub Pages) or custom domain
+  const appBaseUrl = typeof window !== 'undefined' 
+    ? (window.location.origin + window.location.pathname).replace(/\/$/, '')
+    : 'https://kamil-fron.github.io/nasze-zdjecia';
   const effectiveUrl = customUrl.trim() || appBaseUrl;
 
   useEffect(() => {

@@ -298,6 +298,34 @@ app.post('/api/guests/register', (req, res) => {
   res.json({ success: true, name: name.trim() });
 });
 
+// Get all registered guests (for Admin)
+app.get('/api/guests', (req, res) => {
+  const db = loadData();
+  const guestsList = Object.entries(db.guests || {}).map(([deviceId, name]) => ({
+    deviceId,
+    name
+  }));
+  res.json({ guests: guestsList });
+});
+
+// Admin: Delete a guest registration
+app.delete('/api/guests/:deviceId', (req, res) => {
+  const { deviceId } = req.params;
+  const { pin } = req.body;
+  const db = loadData();
+
+  if (!pin || String(pin).trim() !== String(db.settings.adminPin || '1234').trim()) {
+    return res.status(403).json({ error: 'Brak uprawnień administratora.' });
+  }
+
+  if (db.guests && db.guests[deviceId]) {
+    delete db.guests[deviceId];
+    saveData(db);
+  }
+
+  res.json({ success: true });
+});
+
 // Google album verification status endpoint
 app.get('/api/google/album-status', (req, res) => {
   const db = loadData();
