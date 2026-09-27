@@ -121,48 +121,35 @@ const defaultSettings: WeddingSettings = {
   ]
 };
 
-const seedPhotos: PhotoItem[] = [
-  {
-    id: "seed-1",
-    url: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1200&q=80",
-    authorName: "Świadek Paweł",
-    deviceId: "device-seed-1",
-    caption: "Cudowny moment przysięgi! Gratulacje Młodej Parze!",
-    createdAt: new Date(Date.now() - 3600000 * 4).toISOString(),
-    likes: 14,
-    reactions: { heart: 9, cheers: 3, sparkles: 2, dance: 0 },
-    likedByDevices: [],
-    googleSynced: true
-  },
-  {
-    id: "seed-2",
-    url: "https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80",
-    authorName: "Ciocia Kasia & Wujek Marek",
-    deviceId: "device-seed-2",
-    caption: "Pierwszy taniec wyglądał jak z bajki ✨ Sto lat!",
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString(),
-    likes: 19,
-    reactions: { heart: 12, cheers: 4, sparkles: 3, dance: 1 },
-    likedByDevices: [],
-    googleSynced: true
-  },
-  {
-    id: "seed-3",
-    url: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=1200&q=80",
-    authorName: "Ekipa ze studiów",
-    deviceId: "device-seed-3",
-    caption: "Toast za zdrowie Aleksandry i Michała! Bawimy się do rana!",
-    createdAt: new Date(Date.now() - 3600000 * 1).toISOString(),
-    likes: 11,
-    reactions: { heart: 5, cheers: 8, sparkles: 1, dance: 2 },
-    likedByDevices: [],
-    googleSynced: true
-  }
-];
+const seedPhotos: PhotoItem[] = [];
 
 interface WeddingDb {
   settings: WeddingSettings;
   photos: PhotoItem[];
+  guests?: Record<string, string>; // deviceId -> guestName
+}
+
+function isNameDuplicate(name: string, deviceId: string, db: WeddingDb): boolean {
+  if (!name || !name.trim()) return false;
+  const normalized = name.trim().toLowerCase();
+  
+  // Check registered guests map
+  if (db.guests) {
+    for (const [devId, gName] of Object.entries(db.guests)) {
+      if (devId !== deviceId && gName.trim().toLowerCase() === normalized) {
+        return true;
+      }
+    }
+  }
+
+  // Check photos author names from different devices
+  for (const photo of db.photos) {
+    if (photo.deviceId && photo.deviceId !== deviceId && photo.authorName.trim().toLowerCase() === normalized) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function loadData(): WeddingDb {
@@ -179,13 +166,14 @@ function loadData(): WeddingDb {
             ...(parsed.settings?.googleSync || {})
           }
         },
-        photos: Array.isArray(parsed.photos) ? parsed.photos : seedPhotos
+        photos: Array.isArray(parsed.photos) ? parsed.photos : seedPhotos,
+        guests: parsed.guests || {}
       };
     }
   } catch (err) {
     console.error('Error reading wedding database, using defaults:', err);
   }
-  const initialData: WeddingDb = { settings: defaultSettings, photos: seedPhotos };
+  const initialData: WeddingDb = { settings: defaultSettings, photos: seedPhotos, guests: {} };
   saveData(initialData);
   return initialData;
 }
@@ -275,6 +263,72 @@ app.post('/api/google/sync-all', (req, res) => {
   }
 });
 
+// Check if a guest name is already taken by another device
+app.post('/api/guests/check-name', (req, res) => {
+  const { name, deviceId } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ available: false, error: 'Proszę podać imię.' });
+  }
+  const db = loadData();
+  const isDup = isNameDuplicate(name, deviceId, db);
+  if (isDup) {
+    return res.json({
+      available: false,
+      error: `Imię "${name.trim()}" zostało już wcześniej zajęte przez innego gościa. Dodaj np. pierwszą literę nazwiska lub dopisek (np. ${name.trim()} K. lub ${name.trim()} - świadek).`
+    });
+  }
+  res.json({ available: true });
+});
+
+// Register guest device with name
+app.post('/api/guests/register', (req, res) => {
+  const { name, deviceId } = req.body;
+  if (!name || !name.trim()) {
+    return res.status(400).json({ error: 'Imię jest wymagane.' });
+  }
+  const db = loadData();
+  if (isNameDuplicate(name, deviceId, db)) {
+    return res.status(400).json({
+      error: `Imię "${name.trim()}" zostało już wcześniej zajęte przez innego gościa. Dodaj np. pierwszą literę nazwiska lub dopisek.`
+    });
+  }
+  if (!db.guests) db.guests = {};
+  db.guests[deviceId || 'anonymous'] = name.trim();
+  saveData(db);
+  res.json({ success: true, name: name.trim() });
+});
+
+// Google album verification status endpoint
+app.get('/api/google/album-status', (req, res) => {
+  const db = loadData();
+  const albumName = db.settings.googleSync?.albumName || 'Album Weselny';
+  const syncedPhotos = db.photos.filter(p => p.googleSynced);
+
+  // Manifest info
+  const manifest = {
+    albumName,
+    userEmail: db.settings.googleSync?.userEmail || 'bobEKam@gmail.com',
+    isConnected: db.settings.googleSync?.isConnected ?? true,
+    totalPhotosInAlbum: syncedPhotos.length,
+    lastSyncTime: db.settings.googleSync?.lastSyncTime,
+    photos: syncedPhotos.map(p => ({
+      id: p.id,
+      url: p.url,
+      author: p.authorName,
+      caption: p.caption,
+      createdAt: p.createdAt
+    }))
+  };
+
+  try {
+    fs.writeFileSync(path.join(DATA_DIR, 'google_album_manifest.json'), JSON.stringify(manifest, null, 2));
+  } catch (err) {
+    console.error('Failed to write album manifest:', err);
+  }
+
+  res.json({ success: true, album: manifest });
+});
+
 app.get('/api/photos', (req, res) => {
   const db = loadData();
   res.json({ photos: db.photos });
@@ -286,6 +340,15 @@ app.post('/api/photos', (req, res) => {
 
     if (!imageBase64 || !authorName) {
       return res.status(400).json({ error: 'Zdjęcie oraz imię gościa są wymagane.' });
+    }
+
+    const db = loadData();
+
+    // Verify name uniqueness across different devices
+    if (isNameDuplicate(authorName, deviceId, db)) {
+      return res.status(400).json({
+        error: `Imię "${authorName.trim()}" zostało już użyte przez innego gościa. Proszę dodać dopisek lub inicjał (np. ${authorName.trim()} K.).`
+      });
     }
 
     let photoUrl = '';
@@ -306,8 +369,11 @@ app.post('/api/photos', (req, res) => {
       photoUrl = imageBase64;
     }
 
-    const db = loadData();
     const isAutoSync = db.settings.googleSync?.autoSync ?? true;
+
+    // Register guest name for device
+    if (!db.guests) db.guests = {};
+    if (deviceId) db.guests[deviceId] = authorName.trim();
 
     const newPhoto: PhotoItem = {
       id: `photo_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
@@ -319,7 +385,7 @@ app.post('/api/photos', (req, res) => {
       likes: 0,
       reactions: { heart: 0, cheers: 0, sparkles: 0, dance: 0 },
       likedByDevices: [],
-      googleSynced: isAutoSync // Automatically syncs to the couple's connected Google album
+      googleSynced: isAutoSync // Saved to the configured Google album
     };
 
     db.photos.unshift(newPhoto);
@@ -328,6 +394,20 @@ app.post('/api/photos', (req, res) => {
       db.settings.googleSync.lastSyncTime = new Date().toISOString();
     }
     saveData(db);
+
+    // Save album manifest
+    try {
+      const manifest = {
+        albumName: db.settings.googleSync?.albumName || 'Album Weselny',
+        userEmail: db.settings.googleSync?.userEmail || 'bobEKam@gmail.com',
+        updatedAt: new Date().toISOString(),
+        totalPhotos: db.photos.length,
+        photos: db.photos.map(p => ({ id: p.id, author: p.authorName, url: p.url, caption: p.caption, createdAt: p.createdAt }))
+      };
+      fs.writeFileSync(path.join(DATA_DIR, 'google_album_manifest.json'), JSON.stringify(manifest, null, 2));
+    } catch (e) {
+      console.error('Error writing manifest:', e);
+    }
 
     const stats = computeStats(db.photos);
     res.json({ success: true, photo: newPhoto, stats });

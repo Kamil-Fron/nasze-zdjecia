@@ -238,6 +238,8 @@ export default function App() {
             onReact={handleReact}
             onOpenUpload={() => setIsUploadOpen(true)}
             onOpenSlideshow={() => setIsSlideshowOpen(true)}
+            onDeletePhoto={handleDeletePhoto}
+            isAdmin={isAdminAuthenticated}
           />
         )}
 

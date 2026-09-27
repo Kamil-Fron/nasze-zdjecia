@@ -1,0 +1,116 @@
+{
+  "settings": {
+    "coupleNames": "Maria & Kamil",
+    "weddingDate": "2026-09-28T14:30",
+    "weddingLocation": "Hotel Lord, ul. Leśna 36",
+    "welcomeTitle": "Drodzy Goście! Witajcie na naszym przyjęciu. ",
+    "welcomeMessage": "Dziękujemy, że jesteście dziś z nami! Twórzcie z nami te niezwykłe wspomnienia – róbcie zdjęcia i dzielcie się nimi tutaj, abyśmy mogli zobaczyć ten dzień Waszymi oczami.",
+    "customNotice": "Wszystkie dodane zdjęcia zostaną zebrane w naszą pamiątkową księgę weselną! 🥂✨",
+    "googleSync": {
+      "isConnected": true,
+      "userEmail": "bobEKam@gmail.com",
+      "albumName": "Forever ❣️",
+      "autoSync": true,
+      "lastSyncTime": "2026-09-27T20:26:05.438Z",
+      "syncedCount": 4
+    },
+    "adminPin": "1234",
+    "allowGuestComments": true,
+    "allowLikes": true,
+    "timeline": [
+      {
+        "id": "ev-1",
+        "title": "Ceremonia Zaślubin",
+        "time": "16:00",
+        "description": "Uroczysta przysięga małżeńska w Kościele św. Anny.",
+        "icon": "church",
+        "isHighlight": true
+      },
+      {
+        "id": "ev-2",
+        "title": "Przyjazd do Dworku & Toast",
+        "time": "17:30",
+        "description": "Powitanie Nowożeńców chlebem i solą oraz uroczysty toast szampanem.",
+        "icon": "glass",
+        "isHighlight": false
+      },
+      {
+        "id": "ev-3",
+        "title": "Obiad Weselny",
+        "time": "18:00",
+        "description": "Poczęstunek dla wszystkich gości i chwila rozmów przy stołach.",
+        "icon": "utensils",
+        "isHighlight": false
+      },
+      {
+        "id": "ev-4",
+        "title": "Pierwszy Taniec",
+        "time": "19:15",
+        "description": "Oficjalne otwarcie parkietu przez Aleksandrę i Michała!",
+        "icon": "music",
+        "isHighlight": true
+      },
+      {
+        "id": "ev-5",
+        "title": "Krojenie Tortu Weselnego",
+        "time": "21:30",
+        "description": "Słodki punkt programu – autorski tort malinowo-pistacjowy.",
+        "icon": "cake",
+        "isHighlight": true
+      },
+      {
+        "id": "ev-6",
+        "title": "Podziękowania dla Rodziców",
+        "time": "22:30",
+        "description": "Wzruszająca chwila podziękowań dla naszych wspaniałych rodziców.",
+        "icon": "heart",
+        "isHighlight": false
+      },
+      {
+        "id": "ev-7",
+        "title": "Oczepiny & Gry Weselne",
+        "time": "00:00",
+        "description": "Rzut bukietem, rzut muszką i tradycyjne zabawy weselne z wodzirejem!",
+        "icon": "sparkles",
+        "isHighlight": true
+      },
+      {
+        "id": "ev-8",
+        "title": "Zimne Ognie na Tarasie",
+        "time": "00:45",
+        "description": "Wspólne pamiątkowe zdjęcia z iskierkami w blasku nocy.",
+        "icon": "sparkles",
+        "isHighlight": true
+      },
+      {
+        "id": "ev-9",
+        "title": "Gorący Barszczyk Nocny",
+        "time": "02:00",
+        "description": "Krzepiący posiłek na regenerację sił do tańca do białego rana.",
+        "icon": "utensils",
+        "isHighlight": false
+      }
+    ],
+    "googlePhotosUrl": "https://photos.app.goo.gl/wJdD8Z9s8yJ7gPmA8",
+    "googlePhotosInstructions": "Możesz również dołączyć do naszego wspólnego oficjalnego albumu w Google Zdjęcia, aby przesłać całe serie w pełnej rozdzielczości lub dłuższe nagrania wideo."
+  },
+  "photos": [
+    {
+      "id": "photo_1790540765438_bs9bol",
+      "url": "/uploads/wedding_1790540765436_rv2e0pp.jpg",
+      "authorName": "Kamil",
+      "deviceId": "guest_v815arrg_muk93qb9",
+      "caption": "",
+      "createdAt": "2026-09-27T20:26:05.438Z",
+      "likes": 0,
+      "reactions": {
+        "heart": 0,
+        "cheers": 0,
+        "sparkles": 0,
+        "dance": 0
+      },
+      "likedByDevices": [],
+      "googleSynced": true
+    }
+  ]
+}

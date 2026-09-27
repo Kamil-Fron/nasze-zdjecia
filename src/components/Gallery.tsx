@@ -6,7 +6,8 @@ import {
   Columns, 
   Camera, 
   Maximize2, 
-  Tv
+  Tv,
+  Trash2
 } from 'lucide-react';
 import { PhotoItem, GuestProfile, WeddingSettings } from '../types/wedding';
 
@@ -18,6 +19,8 @@ interface GalleryProps {
   onReact: (photoId: string, reactionType: 'heart' | 'cheers' | 'sparkles' | 'dance') => void;
   onOpenUpload: () => void;
   onOpenSlideshow: () => void;
+  onDeletePhoto?: (photoId: string) => void;
+  isAdmin?: boolean;
 }
 
 export const Gallery: React.FC<GalleryProps> = ({
@@ -27,7 +30,9 @@ export const Gallery: React.FC<GalleryProps> = ({
   onSelectPhoto,
   onReact,
   onOpenUpload,
-  onOpenSlideshow
+  onOpenSlideshow,
+  onDeletePhoto,
+  isAdmin = false
 }) => {
   const [filterMode, setFilterMode] = useState<'all' | 'mine' | 'popular'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -265,6 +270,22 @@ export const Gallery: React.FC<GalleryProps> = ({
                       >
                         ✨ {photo.reactions?.sparkles > 0 && photo.reactions.sparkles}
                       </button>
+
+                      {/* Delete photo: strictly allowed only for author or admin */}
+                      {(photo.deviceId === guestProfile.deviceId || isAdmin) && onDeletePhoto && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
+                              onDeletePhoto(photo.id);
+                            }
+                          }}
+                          className="p-1 rounded-md text-stone-400 hover:text-red-600 hover:bg-red-50 text-xs transition-colors cursor-pointer ml-1"
+                          title={isAdmin ? "Usuń zdjęcie (Admin)" : "Usuń swoje zdjęcie"}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -308,11 +329,26 @@ export const Gallery: React.FC<GalleryProps> = ({
                     {photo.caption ? `„${photo.caption}”` : 'Wspomnienie z wesela ❤️'}
                   </p>
 
-                  <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-end text-xs text-rose-500 font-sans">
-                    <span className="flex items-center gap-1">
+                  <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between text-xs font-sans">
+                    <span className="flex items-center gap-1 text-rose-500">
                       <Heart className="w-3.5 h-3.5 fill-rose-500" />
                       {photo.likes || 0}
                     </span>
+
+                    {(photo.deviceId === guestProfile.deviceId || isAdmin) && onDeletePhoto && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
+                            onDeletePhoto(photo.id);
+                          }
+                        }}
+                        className="p-1 rounded text-stone-400 hover:text-red-600 hover:bg-red-50 text-xs transition-colors cursor-pointer"
+                        title={isAdmin ? "Usuń zdjęcie (Admin)" : "Usuń swoje zdjęcie"}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

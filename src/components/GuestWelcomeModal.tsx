@@ -20,18 +20,49 @@ export const GuestWelcomeModal: React.FC<GuestWelcomeModalProps> = ({
 }) => {
   const [name, setName] = useState(currentProfile.name || '');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) {
+    const cleanName = name.trim();
+    if (!cleanName) {
       setError('Proszę podać swoje imię lub pseudonim.');
       return;
     }
-    const updated = saveGuestProfile(name);
-    onSaveProfile(updated);
-    onClose();
+
+    try {
+      setIsSubmitting(true);
+      setError('');
+
+      const res = await fetch('/api/guests/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: cleanName,
+          deviceId: currentProfile.deviceId
+        })
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error || 'To imię jest już zajęte. Proszę dodać dopisek lub inicjał.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      const updated = saveGuestProfile(cleanName);
+      onSaveProfile(updated);
+      setIsSubmitting(false);
+      onClose();
+    } catch {
+      // In case of offline/network issue, still allow local save
+      const updated = saveGuestProfile(cleanName);
+      onSaveProfile(updated);
+      setIsSubmitting(false);
+      onClose();
+    }
   };
 
   return (

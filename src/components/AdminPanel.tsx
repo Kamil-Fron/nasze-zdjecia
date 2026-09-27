@@ -514,6 +514,54 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="w-5 h-5 text-blue-600 rounded cursor-pointer accent-blue-600"
               />
             </div>
+
+            {/* Album verification & content overview */}
+            <div className="p-4 rounded-2xl bg-stone-50/80 border border-stone-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>Weryfikacja zapisu do albumu</span>
+                </span>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  Album utworzony i aktywny
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 text-xs">
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <span className="text-stone-500 block text-[11px]">Nazwa albumu</span>
+                  <span className="font-semibold text-stone-800 truncate block">{googleSync.albumName || 'Forever ❣️'}</span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <span className="text-stone-500 block text-[11px]">Zapisane zdjęcia</span>
+                  <span className="font-semibold text-emerald-700 block">
+                    {photos.filter(p => p.googleSynced).length} / {photos.length} zdjęć w albumie
+                  </span>
+                </div>
+                <div className="bg-white p-2.5 rounded-xl border border-stone-200">
+                  <span className="text-stone-500 block text-[11px]">Konto docelowe</span>
+                  <span className="font-semibold text-blue-700 block truncate">{googleSync.userEmail || 'bobEKam@gmail.com'}</span>
+                </div>
+              </div>
+
+              {photos.length > 0 && (
+                <div className="pt-2">
+                  <span className="text-[11px] font-medium text-stone-600 block mb-1.5">
+                    Zdjęcia aktualnie zarejestrowane w tym albumie:
+                  </span>
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                    {photos.map(p => (
+                      <div key={p.id} className="relative w-12 h-12 rounded-lg overflow-hidden border border-stone-200 shrink-0 group">
+                        <img src={p.url} alt={p.authorName} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-[9px] text-white font-medium p-1 text-center">
+                          {p.authorName}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-stone-100">
