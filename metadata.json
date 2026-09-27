@@ -1,0 +1,8 @@
+{
+  "name": "Aplikacja Weselna - Galeria Zdjęć i Informator",
+  "description": "Wspólna galeria zdjęć dla gości weselnych z zapamiętywaniem urządzenia, integracją z Google Zdjęcia, harmonogramem z odliczaniem na żywo, generatorem kodów QR na stoły i panelem Pary Młodej.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

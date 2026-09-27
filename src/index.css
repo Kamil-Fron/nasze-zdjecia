@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cormorant Garamond", Georgia, Cambria, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-script: "Alex Brush", cursive;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+  }
+  
+  h1, h2, h3, .font-serif-wedding {
+    font-family: var(--font-serif);
+  }
+
+  .font-script-wedding {
+    font-family: var(--font-script);
+  }
+}
+
+/* Custom subtle scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f7f3ed;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4c5b3;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b8a38d;
+}
+
+/* Print styles for Wedding Table Cards */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .printable-card {
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 2px solid #b8976b !important;
+  }
+}
