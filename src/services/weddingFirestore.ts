@@ -10,7 +10,8 @@ import {
   onSnapshot,
   increment,
   arrayUnion,
-  arrayRemove
+  arrayRemove,
+  deleteField
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { PhotoItem, WeddingSettings, WeddingStats } from '../types/wedding';
@@ -41,7 +42,8 @@ export function subscribePhotos(
         photos.push({
           id: docSnap.id,
           ...data,
-          reactions: data.reactions || { heart: 0, cheers: 0, sparkles: 0, dance: 0 },
+          reactions: data.reactions || { heart: 0, tear: 0, fire: 0, laugh: 0 },
+          userReactions: data.userReactions || {},
           likedByDevices: data.likedByDevices || [],
           likes: typeof data.likes === 'number' ? data.likes : 0
         });
@@ -122,7 +124,8 @@ export async function addPhotoToFirestore(photo: PhotoItem) {
       caption: photo.caption || '',
       createdAt: photo.createdAt,
       likes: photo.likes || 0,
-      reactions: photo.reactions || { heart: 0, cheers: 0, sparkles: 0, dance: 0 },
+      reactions: photo.reactions || { heart: 0, tear: 0, fire: 0, laugh: 0 },
+      userReactions: photo.userReactions || {},
       likedByDevices: photo.likedByDevices || [],
       googleSynced: Boolean(photo.googleSynced)
     });
@@ -132,34 +135,40 @@ export async function addPhotoToFirestore(photo: PhotoItem) {
 }
 
 /**
- * Toggle like / reaction in Firestore
+ * Toggle like / reaction in Firestore with strictly 1 reaction per user
  */
 export async function reactToPhotoInFirestore(
   photoId: string, 
-  reactionType: 'heart' | 'cheers' | 'sparkles' | 'dance',
+  reactionType: 'heart' | 'tear' | 'fire' | 'laugh',
   deviceId: string,
-  isAlreadyLiked: boolean
+  previousReaction?: 'heart' | 'tear' | 'fire' | 'laugh'
 ) {
   try {
     const photoRef = doc(db, PHOTOS_COLLECTION, photoId);
     
-    if (reactionType === 'heart') {
-      if (isAlreadyLiked) {
-        await updateDoc(photoRef, {
-          likes: increment(-1),
-          likedByDevices: arrayRemove(deviceId)
-        });
-      } else {
-        await updateDoc(photoRef, {
-          likes: increment(1),
-          'reactions.heart': increment(1),
-          likedByDevices: arrayUnion(deviceId)
-        });
-      }
-    } else {
+    // Toggle off (remove reaction)
+    if (previousReaction === reactionType) {
+      await updateDoc(photoRef, {
+        likes: increment(-1),
+        [`reactions.${reactionType}`]: increment(-1),
+        [`userReactions.${deviceId}`]: deleteField(),
+        likedByDevices: arrayRemove(deviceId)
+      });
+    } 
+    // Switch reaction (count remains 1 from this user)
+    else if (previousReaction) {
+      await updateDoc(photoRef, {
+        [`reactions.${previousReaction}`]: increment(-1),
+        [`reactions.${reactionType}`]: increment(1),
+        [`userReactions.${deviceId}`]: reactionType
+      });
+    } 
+    // New reaction
+    else {
       await updateDoc(photoRef, {
         likes: increment(1),
         [`reactions.${reactionType}`]: increment(1),
+        [`userReactions.${deviceId}`]: reactionType,
         likedByDevices: arrayUnion(deviceId)
       });
     }

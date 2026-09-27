@@ -18,7 +18,7 @@ interface PhotoLightboxProps {
   onClose: () => void;
   onNext?: () => void;
   onPrev?: () => void;
-  onReact: (photoId: string, reactionType: 'heart' | 'cheers' | 'sparkles' | 'dance') => void;
+  onReact: (photoId: string, reactionType: 'heart' | 'tear' | 'fire' | 'laugh') => void;
   onDelete: (photoId: string) => void;
   guestProfile: GuestProfile;
   isAdmin: boolean;
@@ -159,41 +159,61 @@ export const PhotoLightbox: React.FC<PhotoLightboxProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-stone-800/80 px-2.5 py-1 rounded-xl border border-stone-700">
+            <div className="flex items-center gap-1.5 bg-stone-800/80 px-2 py-1 rounded-xl border border-stone-700">
+              {/* Heart */}
               <button
                 onClick={() => onReact(photo.id, 'heart')}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-rose-500/20 text-stone-300 hover:text-rose-400 text-xs transition-colors cursor-pointer"
-                title="Serduszko"
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all cursor-pointer ${
+                  photo.userReactions?.[guestProfile.deviceId] === 'heart'
+                    ? 'bg-rose-500/30 text-rose-300 ring-1 ring-rose-400 font-bold scale-105'
+                    : 'text-stone-300 hover:text-rose-400 hover:bg-stone-700/50'
+                }`}
+                title="Czysta miłość ❤️ (Kliknij, aby polubić)"
               >
                 <span>❤️</span>
                 <span className="font-medium text-xs">{photo.reactions?.heart || 0}</span>
               </button>
 
+              {/* Tear / Emotion */}
               <button
-                onClick={() => onReact(photo.id, 'cheers')}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-amber-500/20 text-stone-300 hover:text-amber-400 text-xs transition-colors cursor-pointer"
-                title="Toast za Parę Młodą!"
+                onClick={() => onReact(photo.id, 'tear')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all cursor-pointer ${
+                  photo.userReactions?.[guestProfile.deviceId] === 'tear'
+                    ? 'bg-sky-500/30 text-sky-300 ring-1 ring-sky-400 font-bold scale-105'
+                    : 'text-stone-300 hover:text-sky-300 hover:bg-stone-700/50'
+                }`}
+                title="Wzruszenie 🥹"
               >
-                <span>🥂</span>
-                <span className="font-medium text-xs">{photo.reactions?.cheers || 0}</span>
+                <span>🥹</span>
+                <span className="font-medium text-xs">{photo.reactions?.tear || 0}</span>
               </button>
 
+              {/* Fire / Ogień parkietu */}
               <button
-                onClick={() => onReact(photo.id, 'sparkles')}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-yellow-500/20 text-stone-300 hover:text-yellow-300 text-xs transition-colors cursor-pointer"
-                title="Błysk & Magia"
+                onClick={() => onReact(photo.id, 'fire')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all cursor-pointer ${
+                  photo.userReactions?.[guestProfile.deviceId] === 'fire'
+                    ? 'bg-amber-500/30 text-amber-300 ring-1 ring-amber-400 font-bold scale-105'
+                    : 'text-stone-300 hover:text-amber-300 hover:bg-stone-700/50'
+                }`}
+                title="Ogień na parkiecie! 🔥"
               >
-                <span>✨</span>
-                <span className="font-medium text-xs">{photo.reactions?.sparkles || 0}</span>
+                <span>🔥</span>
+                <span className="font-medium text-xs">{photo.reactions?.fire || 0}</span>
               </button>
 
+              {/* Laugh / Uśmiech */}
               <button
-                onClick={() => onReact(photo.id, 'dance')}
-                className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-500/20 text-stone-300 hover:text-purple-300 text-xs transition-colors cursor-pointer"
-                title="Taniec!"
+                onClick={() => onReact(photo.id, 'laugh')}
+                className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs transition-all cursor-pointer ${
+                  photo.userReactions?.[guestProfile.deviceId] === 'laugh'
+                    ? 'bg-yellow-500/30 text-yellow-300 ring-1 ring-yellow-400 font-bold scale-105'
+                    : 'text-stone-300 hover:text-yellow-300 hover:bg-stone-700/50'
+                }`}
+                title="Hahaha / Humor 😂"
               >
-                <span>💃</span>
-                <span className="font-medium text-xs">{photo.reactions?.dance || 0}</span>
+                <span>😂</span>
+                <span className="font-medium text-xs">{photo.reactions?.laugh || 0}</span>
               </button>
             </div>
           </div>

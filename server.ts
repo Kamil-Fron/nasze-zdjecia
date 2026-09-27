@@ -383,8 +383,9 @@ app.post('/api/photos', (req, res) => {
       caption: (caption || '').trim(),
       createdAt: new Date().toISOString(),
       likes: 0,
-      reactions: { heart: 0, cheers: 0, sparkles: 0, dance: 0 },
+      reactions: { heart: 0, tear: 0, fire: 0, laugh: 0 },
       likedByDevices: [],
+      userReactions: {},
       googleSynced: isAutoSync // Saved to the configured Google album
     };
 
@@ -419,7 +420,14 @@ app.post('/api/photos', (req, res) => {
 
 app.post('/api/photos/:id/react', (req, res) => {
   const { id } = req.params;
-  const { reactionType, deviceId } = req.body as { reactionType?: 'heart' | 'cheers' | 'sparkles' | 'dance'; deviceId: string };
+  const { reactionType = 'heart', deviceId } = req.body as { 
+    reactionType?: 'heart' | 'tear' | 'fire' | 'laugh'; 
+    deviceId: string 
+  };
+
+  if (!deviceId) {
+    return res.status(400).json({ error: 'Brak identyfikatora urządzenia' });
+  }
 
   const db = loadData();
   const photo = db.photos.find(p => p.id === id);
@@ -428,21 +436,46 @@ app.post('/api/photos/:id/react', (req, res) => {
     return res.status(404).json({ error: 'Zdjęcie nie zostało znalezione.' });
   }
 
-  if (reactionType && photo.reactions && photo.reactions[reactionType] !== undefined) {
+  if (!photo.reactions) {
+    photo.reactions = { heart: 0, tear: 0, fire: 0, laugh: 0 };
+  }
+  if (!photo.userReactions) {
+    photo.userReactions = {};
+  }
+  if (!photo.likedByDevices) {
+    photo.likedByDevices = [];
+  }
+
+  const previousReaction = photo.userReactions[deviceId];
+
+  // If user already clicked the same reaction -> toggle off (remove reaction)
+  if (previousReaction === reactionType) {
+    delete photo.userReactions[deviceId];
+    photo.likedByDevices = photo.likedByDevices.filter(d => d !== deviceId);
+    if (photo.reactions[reactionType] !== undefined) {
+      photo.reactions[reactionType] = Math.max(0, (photo.reactions[reactionType] || 1) - 1);
+    }
+    photo.likes = Math.max(0, (photo.likes || 1) - 1);
+  } 
+  // If user had a different reaction before -> switch reaction without increasing total user count
+  else if (previousReaction) {
+    // Decrement previous
+    if (photo.reactions[previousReaction] !== undefined) {
+      photo.reactions[previousReaction] = Math.max(0, (photo.reactions[previousReaction] || 1) - 1);
+    }
+    // Set new
+    photo.userReactions[deviceId] = reactionType;
     photo.reactions[reactionType] = (photo.reactions[reactionType] || 0) + 1;
-    photo.likes = (photo.likes || 0) + 1;
-    if (deviceId && !photo.likedByDevices.includes(deviceId)) {
+    // Total likes remains 1 from this user
+  } 
+  // First reaction by this user on this photo
+  else {
+    photo.userReactions[deviceId] = reactionType;
+    if (!photo.likedByDevices.includes(deviceId)) {
       photo.likedByDevices.push(deviceId);
     }
-  } else {
-    if (deviceId && photo.likedByDevices.includes(deviceId)) {
-      photo.likedByDevices = photo.likedByDevices.filter(d => d !== deviceId);
-      photo.likes = Math.max(0, (photo.likes || 1) - 1);
-    } else {
-      if (deviceId) photo.likedByDevices.push(deviceId);
-      photo.likes = (photo.likes || 0) + 1;
-      photo.reactions.heart = (photo.reactions.heart || 0) + 1;
-    }
+    photo.reactions[reactionType] = (photo.reactions[reactionType] || 0) + 1;
+    photo.likes = (photo.likes || 0) + 1;
   }
 
   saveData(db);

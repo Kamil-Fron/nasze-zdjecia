@@ -136,11 +136,6 @@ export const Header: React.FC<HeaderProps> = ({
           <p className="text-stone-700 italic font-serif text-lg leading-relaxed px-4">
             „{settings.welcomeMessage || settings.welcomeTitle}”
           </p>
-          {settings.customNotice && (
-            <div className="mt-2 inline-block px-3.5 py-1.5 rounded-lg bg-amber-50/80 border border-amber-200/70 text-xs sm:text-sm text-amber-900 font-medium">
-              {settings.customNotice}
-            </div>
-          )}
         </div>
 
         {/* Live Contribution Counter & Upload Action */}

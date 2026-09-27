@@ -16,7 +16,7 @@ interface GalleryProps {
   guestProfile: GuestProfile;
   settings: WeddingSettings;
   onSelectPhoto: (photo: PhotoItem) => void;
-  onReact: (photoId: string, reactionType: 'heart' | 'cheers' | 'sparkles' | 'dance') => void;
+  onReact: (photoId: string, reactionType: 'heart' | 'tear' | 'fire' | 'laugh') => void;
   onOpenUpload: () => void;
   onOpenSlideshow: () => void;
   onDeletePhoto?: (photoId: string) => void;
@@ -192,149 +192,125 @@ export const Gallery: React.FC<GalleryProps> = ({
           </button>
         </div>
       ) : viewStyle === 'modern' ? (
-        /* Modern Clean Responsive Grid */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-5">
+        /* Modern Editorial & Minimalist Visual Grid */
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
           {filteredPhotos.map((photo) => {
+            const myReaction = photo.userReactions?.[guestProfile.deviceId];
             const isLikedByMe = photo.likedByDevices?.includes(guestProfile.deviceId);
 
             return (
               <div
                 key={photo.id}
-                className="group relative bg-white rounded-2xl overflow-hidden border border-stone-200/90 shadow-xs hover:shadow-lg transition-all duration-300 flex flex-col"
+                className="group relative bg-white/95 rounded-3xl overflow-hidden border border-stone-200/80 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] hover:shadow-[0_12px_32px_-6px_rgba(0,0,0,0.12)] transition-all duration-500 flex flex-col hover:-translate-y-1"
               >
+                {/* Visual Image container with soft vignette overlay */}
                 <div
                   onClick={() => onSelectPhoto(photo)}
-                  className="relative aspect-4/3 overflow-hidden bg-stone-100 cursor-pointer"
+                  className="relative aspect-[4/3] sm:aspect-[1/1] overflow-hidden bg-stone-100 cursor-pointer"
                 >
                   <img
                     src={photo.url}
                     alt={photo.caption || `Zdjęcie od ${photo.authorName}`}
                     loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-3">
-                    <span className="inline-flex items-center gap-1 text-white text-xs font-medium">
-                      <Maximize2 className="w-3.5 h-3.5" />
-                      <span>Powiększ</span>
+                  {/* Subtle top metadata chip */}
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 z-10">
+                    <span className="px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-md text-white/95 text-[11px] font-medium tracking-wide">
+                      {photo.authorName}
                     </span>
-                  </div>
-                </div>
-
-                <div className="p-3.5 flex-1 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between text-xs text-stone-500 mb-1">
-                      <div className="flex items-center gap-1.5 font-medium text-stone-800">
-                        <div className="w-5 h-5 rounded-full bg-rose-100 text-rose-700 flex items-center justify-center text-[10px] font-bold">
-                          {photo.authorName.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="truncate max-w-[150px]">
-                          {photo.authorName}
-                        </span>
-                      </div>
-                      <span className="text-[11px]">{getTimeAgo(photo.createdAt)}</span>
-                    </div>
-
-                    {photo.caption && (
-                      <p className="text-xs text-stone-700 line-clamp-2 mt-1.5 italic font-serif">
-                        „{photo.caption}”
-                      </p>
+                    {photo.deviceId === guestProfile.deviceId && (
+                      <span className="px-2 py-0.5 rounded-full bg-rose-500/80 backdrop-blur-md text-white text-[10px] font-semibold">
+                        Twoje
+                      </span>
                     )}
                   </div>
 
-                  <div className="mt-3 pt-2.5 border-t border-stone-100 flex items-center justify-between">
-                    <button
-                      onClick={() => onReact(photo.id, 'heart')}
-                      className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                        isLikedByMe
-                          ? 'bg-rose-50 text-rose-600'
-                          : 'text-stone-500 hover:text-rose-600 hover:bg-rose-50/50'
-                      }`}
-                      title="Polub to zdjęcie"
-                    >
-                      <Heart className={`w-3.5 h-3.5 ${isLikedByMe ? 'fill-rose-500 text-rose-500' : ''}`} />
-                      <span>{photo.likes || 0}</span>
-                    </button>
+                  {/* Hover visual CTA */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-between p-4">
+                    <span className="inline-flex items-center gap-1.5 text-white text-xs font-medium tracking-wide">
+                      <Maximize2 className="w-4 h-4 text-rose-300" />
+                      <span>Powiększ</span>
+                    </span>
+                    <span className="text-[11px] text-stone-200 font-sans">
+                      {getTimeAgo(photo.createdAt)}
+                    </span>
+                  </div>
+                </div>
 
-                    <div className="flex items-center gap-1">
+                {/* Content & Interactive Reaction Bar */}
+                <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between bg-gradient-to-b from-white to-[#FDFCFB]">
+                  {photo.caption ? (
+                    <p className="text-sm text-stone-800 font-serif italic leading-relaxed line-clamp-2">
+                      „{photo.caption}”
+                    </p>
+                  ) : (
+                    <p className="text-xs text-stone-400 font-serif italic">
+                      Wspomnienie weselne
+                    </p>
+                  )}
+
+                  {/* Reaction bar - clean, modern, 1-click single reaction */}
+                  <div className="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
+                    <div className="flex items-center gap-1 bg-stone-50/90 p-1 rounded-2xl border border-stone-200/60">
+                      {/* Heart */}
                       <button
-                        onClick={() => onReact(photo.id, 'cheers')}
-                        className="p-1 rounded-md hover:bg-amber-50 text-stone-400 hover:text-amber-600 text-xs transition-colors cursor-pointer"
-                        title="Wznieś toast!"
+                        onClick={() => onReact(photo.id, 'heart')}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                          myReaction === 'heart'
+                            ? 'bg-rose-500 text-white shadow-2xs font-semibold scale-105'
+                            : 'text-stone-600 hover:text-rose-600 hover:bg-rose-50/60'
+                        }`}
+                        title="Uwielbiam ❤️"
                       >
-                        🥂 {photo.reactions?.cheers > 0 && photo.reactions.cheers}
-                      </button>
-                      <button
-                        onClick={() => onReact(photo.id, 'sparkles')}
-                        className="p-1 rounded-md hover:bg-yellow-50 text-stone-400 hover:text-yellow-600 text-xs transition-colors cursor-pointer"
-                        title="Błysk!"
-                      >
-                        ✨ {photo.reactions?.sparkles > 0 && photo.reactions.sparkles}
+                        <span>❤️</span>
+                        <span>{photo.reactions?.heart || 0}</span>
                       </button>
 
-                      {/* Delete photo: strictly allowed only for author or admin */}
-                      {(photo.deviceId === guestProfile.deviceId || isAdmin) && onDeletePhoto && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
-                              onDeletePhoto(photo.id);
-                            }
-                          }}
-                          className="p-1 rounded-md text-stone-400 hover:text-red-600 hover:bg-red-50 text-xs transition-colors cursor-pointer ml-1"
-                          title={isAdmin ? "Usuń zdjęcie (Admin)" : "Usuń swoje zdjęcie"}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                      {/* Tear / Wzruszenie */}
+                      <button
+                        onClick={() => onReact(photo.id, 'tear')}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                          myReaction === 'tear'
+                            ? 'bg-sky-500 text-white shadow-2xs font-semibold scale-105'
+                            : 'text-stone-600 hover:text-sky-600 hover:bg-sky-50/60'
+                        }`}
+                        title="Wzruszenie 🥹"
+                      >
+                        <span>🥹</span>
+                        <span>{photo.reactions?.tear > 0 ? photo.reactions.tear : ''}</span>
+                      </button>
+
+                      {/* Fire / Ogień parkietu */}
+                      <button
+                        onClick={() => onReact(photo.id, 'fire')}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                          myReaction === 'fire'
+                            ? 'bg-amber-500 text-white shadow-2xs font-semibold scale-105'
+                            : 'text-stone-600 hover:text-amber-600 hover:bg-amber-50/60'
+                        }`}
+                        title="Ogień! 🔥"
+                      >
+                        <span>🔥</span>
+                        <span>{photo.reactions?.fire > 0 ? photo.reactions.fire : ''}</span>
+                      </button>
+
+                      {/* Laugh / Śmiech */}
+                      <button
+                        onClick={() => onReact(photo.id, 'laugh')}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                          myReaction === 'laugh'
+                            ? 'bg-yellow-500 text-white shadow-2xs font-semibold scale-105'
+                            : 'text-stone-600 hover:text-yellow-600 hover:bg-yellow-50/60'
+                        }`}
+                        title="Śmiech 😂"
+                      >
+                        <span>😂</span>
+                        <span>{photo.reactions?.laugh > 0 ? photo.reactions.laugh : ''}</span>
+                      </button>
                     </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* Polaroid Retro View */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {filteredPhotos.map((photo, idx) => {
-            const rotationDegree = (idx % 5 === 0 ? '-1.5deg' : idx % 3 === 0 ? '1.5deg' : '-0.5deg');
 
-            return (
-              <div
-                key={photo.id}
-                style={{ transform: `rotate(${rotationDegree})` }}
-                className="bg-white p-3.5 pb-5 rounded-sm shadow-md hover:shadow-xl transition-all duration-300 border border-stone-200 flex flex-col group cursor-pointer hover:rotate-0"
-                onClick={() => onSelectPhoto(photo)}
-              >
-                <div className="w-3 h-3 rounded-full bg-rose-300/80 shadow-xs mx-auto mb-2 border border-rose-400"></div>
-
-                <div className="aspect-square bg-stone-900 overflow-hidden relative">
-                  <img
-                    src={photo.url}
-                    alt={photo.caption || photo.authorName}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
-                  />
-                </div>
-
-                <div className="mt-3 px-1">
-                  <div className="flex items-center justify-between text-xs text-stone-700 font-sans">
-                    <span className="font-semibold text-stone-800">
-                      {photo.authorName}
-                    </span>
-                    <span className="text-[11px] text-stone-400">{getTimeAgo(photo.createdAt)}</span>
-                  </div>
-
-                  <p className="mt-1.5 text-xs text-stone-800 font-serif italic line-clamp-2">
-                    {photo.caption ? `„${photo.caption}”` : 'Wspomnienie z wesela ❤️'}
-                  </p>
-
-                  <div className="mt-2 pt-2 border-t border-stone-100 flex items-center justify-between text-xs font-sans">
-                    <span className="flex items-center gap-1 text-rose-500">
-                      <Heart className="w-3.5 h-3.5 fill-rose-500" />
-                      {photo.likes || 0}
-                    </span>
-
+                    {/* Delete action for author or admin */}
                     {(photo.deviceId === guestProfile.deviceId || isAdmin) && onDeletePhoto && (
                       <button
                         onClick={(e) => {
@@ -343,12 +319,91 @@ export const Gallery: React.FC<GalleryProps> = ({
                             onDeletePhoto(photo.id);
                           }
                         }}
-                        className="p-1 rounded text-stone-400 hover:text-red-600 hover:bg-red-50 text-xs transition-colors cursor-pointer"
+                        className="p-1.5 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 text-xs transition-colors cursor-pointer"
                         title={isAdmin ? "Usuń zdjęcie (Admin)" : "Usuń swoje zdjęcie"}
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* Polaroid Retro Modern View */
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-7">
+          {filteredPhotos.map((photo, idx) => {
+            const rotationDegree = (idx % 4 === 0 ? '-1.5deg' : idx % 2 === 0 ? '1.5deg' : '-0.5deg');
+            const myReaction = photo.userReactions?.[guestProfile.deviceId];
+
+            return (
+              <div
+                key={photo.id}
+                style={{ transform: `rotate(${rotationDegree})` }}
+                className="bg-white p-4 pb-6 rounded-2xl shadow-[0_6px_25px_-5px_rgba(0,0,0,0.08)] hover:shadow-2xl transition-all duration-300 border border-stone-200/90 flex flex-col group cursor-pointer hover:rotate-0 hover:scale-[1.02]"
+                onClick={() => onSelectPhoto(photo)}
+              >
+                <div className="w-3.5 h-3.5 rounded-full bg-rose-200/90 mx-auto mb-2.5 border border-rose-300"></div>
+
+                <div className="aspect-square bg-stone-900 rounded-xl overflow-hidden relative shadow-inner">
+                  <img
+                    src={photo.url}
+                    alt={photo.caption || photo.authorName}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  />
+                </div>
+
+                <div className="mt-3.5 px-1">
+                  <div className="flex items-center justify-between text-xs text-stone-700 font-sans">
+                    <span className="font-semibold text-stone-900 tracking-tight">
+                      {photo.authorName}
+                    </span>
+                    <span className="text-[11px] text-stone-400">{getTimeAgo(photo.createdAt)}</span>
+                  </div>
+
+                  <p className="mt-1.5 text-xs text-stone-800 font-serif italic line-clamp-2">
+                    {photo.caption ? `„${photo.caption}”` : 'Niezapomniane wesele ❤️'}
+                  </p>
+
+                  <div className="mt-3 pt-2.5 border-t border-stone-100 flex items-center justify-between text-xs font-sans">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onReact(photo.id, 'heart');
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs transition-colors ${
+                        myReaction === 'heart'
+                          ? 'bg-rose-50 text-rose-600 font-semibold'
+                          : 'text-stone-500 hover:text-rose-500'
+                      }`}
+                    >
+                      <Heart className={`w-3.5 h-3.5 ${myReaction === 'heart' ? 'fill-rose-500 text-rose-500' : ''}`} />
+                      <span>{photo.likes || 0}</span>
+                    </button>
+
+                    <div className="flex items-center gap-1">
+                      {photo.reactions?.tear > 0 && <span title="Wzruszenie">🥹 {photo.reactions.tear}</span>}
+                      {photo.reactions?.fire > 0 && <span title="Ogień">🔥 {photo.reactions.fire}</span>}
+                      {photo.reactions?.laugh > 0 && <span title="Śmiech">😂 {photo.reactions.laugh}</span>}
+
+                      {(photo.deviceId === guestProfile.deviceId || isAdmin) && onDeletePhoto && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Czy na pewno chcesz usunąć to zdjęcie?')) {
+                              onDeletePhoto(photo.id);
+                            }
+                          }}
+                          className="p-1 rounded text-stone-400 hover:text-red-600 hover:bg-red-50 text-xs transition-colors cursor-pointer ml-1"
+                          title={isAdmin ? "Usuń zdjęcie (Admin)" : "Usuń swoje zdjęcie"}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

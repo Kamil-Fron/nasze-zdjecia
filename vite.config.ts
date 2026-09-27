@@ -4,8 +4,12 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  // If building for GitHub Pages or relative hosting, use repo path or relative base
+  const isGitHubPages = process.env.GITHUB_ACTIONS === 'true';
+  const base = isGitHubPages ? '/nasze-zdjecia/' : './';
+
   return {
-    base: '/',
+    base,
     plugins: [react(), tailwindcss()],
     resolve: {
       alias: {

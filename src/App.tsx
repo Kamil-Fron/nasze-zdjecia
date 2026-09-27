@@ -21,8 +21,10 @@ import {
   deletePhotoFromFirestore 
 } from './services/weddingFirestore';
 
+import { fallbackWeddingSettings } from './utils/defaultSettings';
+
 export default function App() {
-  const [settings, setSettings] = useState<WeddingSettings | null>(null);
+  const [settings, setSettings] = useState<WeddingSettings>(fallbackWeddingSettings);
   const [stats, setStats] = useState<WeddingStats>({ totalPhotos: 0, uniqueContributors: 0, contributorsList: [], syncedToGoogleCount: 0 });
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
   const [guestProfile, setGuestProfile] = useState<GuestProfile>(getGuestProfile());
@@ -34,7 +36,7 @@ export default function App() {
   const [isSlideshowOpen, setIsSlideshowOpen] = useState(false);
   const [selectedPhoto, setSelectedPhoto] = useState<PhotoItem | null>(null);
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false);
 
   // Fetch wedding info & stats
   const fetchWeddingData = useCallback(async () => {
@@ -42,11 +44,11 @@ export default function App() {
       const res = await fetch('/api/wedding');
       if (res.ok) {
         const data = await res.json();
-        setSettings(data.settings);
-        setStats(data.stats);
+        if (data.settings) setSettings(data.settings);
+        if (data.stats) setStats(data.stats);
       }
     } catch (err) {
-      console.error('Failed to load wedding settings:', err);
+      console.warn('Backend /api/wedding offline or static hosting - using fallback/Firestore config.');
     }
   }, []);
 
@@ -108,31 +110,55 @@ export default function App() {
     return () => clearInterval(interval);
   }, [fetchPhotos, fetchWeddingData]);
 
-  // Reactions handler
-  const handleReact = async (photoId: string, reactionType: 'heart' | 'cheers' | 'sparkles' | 'dance') => {
+  // Reactions handler - strictly 1 reaction per device per photo
+  const handleReact = async (photoId: string, reactionType: 'heart' | 'tear' | 'fire' | 'laugh') => {
     const currentPhoto = photos.find(p => p.id === photoId);
-    const isLiked = currentPhoto?.likedByDevices?.includes(guestProfile.deviceId) || false;
+    if (!currentPhoto) return;
+
+    const previousReaction = currentPhoto.userReactions?.[guestProfile.deviceId];
 
     // Optimistic UI update
     setPhotos(prev => prev.map(p => {
       if (p.id === photoId) {
+        const nextReactions = { ...(p.reactions || { heart: 0, tear: 0, fire: 0, laugh: 0 }) };
+        const nextUserReactions = { ...(p.userReactions || {}) };
+        let nextLikedBy = [...(p.likedByDevices || [])];
+        let nextLikes = p.likes || 0;
+
+        if (previousReaction === reactionType) {
+          // Toggle off
+          delete nextUserReactions[guestProfile.deviceId];
+          nextLikedBy = nextLikedBy.filter(d => d !== guestProfile.deviceId);
+          nextReactions[reactionType] = Math.max(0, (nextReactions[reactionType] || 1) - 1);
+          nextLikes = Math.max(0, nextLikes - 1);
+        } else if (previousReaction) {
+          // Switch reaction (likes count stays 1 for this user)
+          nextReactions[previousReaction] = Math.max(0, (nextReactions[previousReaction] || 1) - 1);
+          nextReactions[reactionType] = (nextReactions[reactionType] || 0) + 1;
+          nextUserReactions[guestProfile.deviceId] = reactionType;
+        } else {
+          // New reaction
+          nextUserReactions[guestProfile.deviceId] = reactionType;
+          if (!nextLikedBy.includes(guestProfile.deviceId)) {
+            nextLikedBy.push(guestProfile.deviceId);
+          }
+          nextReactions[reactionType] = (nextReactions[reactionType] || 0) + 1;
+          nextLikes += 1;
+        }
+
         return {
           ...p,
-          likes: isLiked && reactionType === 'heart' ? Math.max(0, p.likes - 1) : p.likes + 1,
-          reactions: {
-            ...p.reactions,
-            [reactionType]: (p.reactions?.[reactionType] || 0) + 1
-          },
-          likedByDevices: isLiked && reactionType === 'heart'
-            ? p.likedByDevices.filter(d => d !== guestProfile.deviceId)
-            : [...(p.likedByDevices || []), guestProfile.deviceId]
+          likes: nextLikes,
+          reactions: nextReactions,
+          userReactions: nextUserReactions,
+          likedByDevices: nextLikedBy
         };
       }
       return p;
     }));
 
-    // Update in Firestore for other devices
-    reactToPhotoInFirestore(photoId, reactionType, guestProfile.deviceId, isLiked);
+    // Update in Firestore cloud
+    reactToPhotoInFirestore(photoId, reactionType, guestProfile.deviceId, previousReaction);
 
     try {
       const res = await fetch(`/api/photos/${photoId}/react`, {

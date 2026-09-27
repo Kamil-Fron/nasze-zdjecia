@@ -41,10 +41,11 @@ export interface PhotoItem {
   likes: number;
   reactions: {
     heart: number;
-    cheers: number;
-    sparkles: number;
-    dance: number;
+    tear: number; // 🥹 wzruszenie
+    fire: number; // 🔥 ogień parkietu
+    laugh: number; // 😂 wesołość
   };
+  userReactions?: Record<string, 'heart' | 'tear' | 'fire' | 'laugh'>; // deviceId -> reaction
   likedByDevices: string[];
   googleSynced?: boolean;
 }

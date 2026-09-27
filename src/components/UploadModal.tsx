@@ -81,27 +81,47 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
       setUploadProgress('Wysyłam do galerii i synchronizuję z albumem...');
 
-      const response = await fetch('/api/photos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageBase64: base64Data,
+      let photoCreated: any = null;
+
+      try {
+        const response = await fetch('/api/photos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageBase64: base64Data,
+            authorName: finalAuthorName,
+            deviceId: guestProfile.deviceId,
+            caption: caption.trim()
+          })
+        });
+
+        if (response.ok) {
+          const uploadResult = await response.json();
+          photoCreated = uploadResult.photo;
+        }
+      } catch (backendErr) {
+        console.warn('Backend server not reachable (e.g. static hosting). Uploading directly to Firestore:', backendErr);
+      }
+
+      // If photo was not created by backend (e.g. running on GitHub Pages static), create directly in Firestore!
+      if (!photoCreated) {
+        photoCreated = {
+          id: `photo_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+          url: base64Data,
           authorName: finalAuthorName,
           deviceId: guestProfile.deviceId,
-          caption: caption.trim()
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Nie udało się przesłać zdjęcia.');
+          caption: caption.trim(),
+          createdAt: new Date().toISOString(),
+          likes: 0,
+          reactions: { heart: 0, tear: 0, fire: 0, laugh: 0 },
+          likedByDevices: [],
+          userReactions: {},
+          googleSynced: true
+        };
       }
 
-      const uploadResult = await response.json();
-      if (uploadResult.photo) {
-        // Also replicate to Firestore cloud for multi-device real-time sync
-        addPhotoToFirestore(uploadResult.photo).catch(e => console.warn('Firestore sync background notice:', e));
-      }
+      // Ensure Firestore has the record for all devices
+      await addPhotoToFirestore(photoCreated);
 
       // Fire celebratory confetti!
       confetti({
